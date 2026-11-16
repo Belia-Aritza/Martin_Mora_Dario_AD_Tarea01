@@ -3,6 +3,7 @@ package org.iesalandalus.programacion.tallermecanico.modelo.dominio;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import org.iesalandalus.programacion.tallermecanico.modelo.TallerMecanicoExcepcion;
 
@@ -12,13 +13,26 @@ import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
 
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "tipo"
+)
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = Revision.class, name = "Revision"),
+        @JsonSubTypes.Type(value = Mecanico.class, name = "Mecanico")
+})
 public abstract class Trabajo {
     public static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final float FACTOR_DIA = 10F;
 
     private Cliente cliente;
     private Vehiculo vehiculo;
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaInicio;
+    // Un trabajo abierto no tiene fecha de fin: no se escribe en el JSON para poder leerlo de nuevo sin errores.
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private LocalDate fechaFin;
     private int horas;
 
@@ -127,6 +141,7 @@ public abstract class Trabajo {
     }
 
 
+    @JsonIgnore
     public float getPrecio() {
         return getPrecioFijo() + getPrecioEspecifico();
     }
@@ -139,6 +154,7 @@ public abstract class Trabajo {
         return (estaCerrado()) ? (int) ChronoUnit.DAYS.between(fechaInicio, fechaFin) : 0;
     }
 
+    @JsonIgnore
     public abstract float getPrecioEspecifico();
 
     @Override
